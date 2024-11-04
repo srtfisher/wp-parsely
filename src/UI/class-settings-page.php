@@ -148,8 +148,10 @@ final class Settings_Page {
 	 */
 	public function run(): void {
 		add_action( 'admin_menu', array( $this, 'add_settings_sub_menu' ) );
+		add_action( 'admin_menu', array( $this, 'add_parsely_menu' ) );
 		add_action( 'admin_init', array( $this, 'initialize_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_assets' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'parsely_enqueue_react_scripts' ) );
 	}
 
 	/**
@@ -202,6 +204,47 @@ final class Settings_Page {
 			// Adds help text when admin page loads.
 			add_action( 'load-' . $this->hook_suffix, array( $this, 'add_help_text' ) );
 		}
+	}
+
+	public function add_parsely_menu(): void {
+		add_menu_page(
+			'Parse.ly React Page', // Page title.
+			'Parse.ly',      // Menu title.
+			'manage_options',      // Capability.
+			'parsely-react',       // Menu slug.
+			array( $this, 'parsely_render_react_page' ), // Callback function.
+			'dashicons-admin-generic',   // Icon URL.
+			6                          // Position.
+		);
+	}
+
+	public function parsely_render_react_page(): void {
+		echo '<div id="my-react-app"></div>';
+	}
+
+	public function parsely_enqueue_react_scripts( ?string $hook_suffix ): void {
+		// Only load scripts on our specific admin page.
+		if ( 'toplevel_page_parsely-react' !== $hook_suffix ) {
+			return;
+		}
+
+		$built_assets_url = plugin_dir_url( PARSELY_FILE ) . '/build/content-helper/';
+		$asset_info       = Utils::get_asset_info( 'build/content-helper/dash.asset.php' );
+
+		wp_enqueue_script(
+			'parsely-react-app',
+			$built_assets_url . 'dash.js',
+			$asset_info['dependencies'],
+			$asset_info['version'],
+			true
+		);
+
+		wp_enqueue_style(
+			'parsely-react-app',
+			$built_assets_url . 'dash.css',
+			array( 'wp-components' ),
+			$asset_info['version']
+		);
 	}
 
 	/**
